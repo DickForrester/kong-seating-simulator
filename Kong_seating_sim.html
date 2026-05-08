@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skull Island: Reign of Kong — Seating Operations Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0ead8;
+            --text-color: #2a2018;
+            --gold: #b07820;
+            --dark-green: #2a3820;
+            --seat-empty: #d8cbaa;
+            --border-light: rgba(42, 32, 24, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Barlow', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1, h2, h3, .bebas {
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 1px;
+        }
+
+        .condensed {
+            font-family: 'Barlow Condensed', sans-serif;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            outline: none;
+            font-family: 'Bebas Neue', cursive;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--dark-green);
+            color: var(--bg-color);
+            border-bottom: 4px solid var(--gold);
+            padding: 0.5rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+
+        .header-title span {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1rem;
+            color: var(--gold);
+            letter-spacing: normal;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.1rem;
+        }
+
+        .stat-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .stat-badge strong {
+            color: var(--gold);
+        }
+
+        select, .btn-small {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1rem;
+            padding: 4px 8px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 2px solid var(--gold);
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .btn-small:hover {
+            background-color: var(--gold);
+            color: white;
+        }
+
+        /* --- Main Layout --- */
+        main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            border-right: 2px solid var(--border-light);
+            min-width: 0;
+        }
+
+        #right-panel {
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0,0,0,0.03);
+            flex-shrink: 0;
+        }
+
+        /* --- Party Bar --- */
+        #party-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 1rem;
+            height: 70px;
+            flex-shrink: 0;
+        }
+
+        .active-party-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .dots-container {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(0,0,0,0.2);
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+
+        #active-party-drag {
+            display: flex;
+            align-items: center;
+            cursor: grab;
+            padding: 4px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        #active-party-drag:active {
+            cursor: grabbing;
+        }
+        #active-party-drag:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .queue-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: bold;
+        }
+
+        .queue-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border: 2px solid rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        
+        .queue-badge:hover {
+            transform: scale(1.1);
+        }
+
+        /* --- Seating Area (Rows + Canvas) --- */
+        #seating-area {
+            display: flex;
+            flex: 1;
+            gap: 1rem;
+            min-height: 0;
+        }
+
+        #rows-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .staging-row {
+            background: white;
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .staging-row.drag-over {
+            background: rgba(176, 120, 32, 0.2);
+            border-color: var(--gold);
+        }
+
+        .staging-row:hover {
+            background: rgba(176, 120, 32, 0.1);
+            border-color: var(--gold);
+        }
+
+        .staging-row::after {
+            content: 'Click \2192';
+            position: absolute;
+            right: 15px;
+            bottom: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--gold);
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-family: 'Barlow Condensed', sans-serif;
+        }
+
+        .staging-row:hover::after {
+            opacity: 1;
+        }
+
+        .row-num {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 1.5rem;
+            color: var(--dark-green);
+            width: 40px;
+        }
+
+        .seats-container {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .seat-rect {
+            width: 35px;
+            height: 45px;
+            background-color: var(--seat-empty);
+            border-radius: 4px;
+            border: 2px solid rgba(0,0,0,0.1);
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .seat-rect.pop {
+            transform: scale(1.2);
+        }
+
+        .row-count {
+            width: 60px;
+            text-align: right;
+            font-weight: bold;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.2rem;
+            color: var(--dark-green);
+        }
+
+        /* --- Canvas Container --- */
+        #canvas-container {
+            flex: 1;
+            background: rgba(255,255,255,0.5);
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer; /* To indicate skip animation */
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- Launch Button --- */
+        #btn-launch {
+            background-color: var(--gold);
+            color: var(--dark-green);
+            font-size: 2rem;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 1rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+
+        #btn-launch:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.2);
+        }
+
+        /* --- Right Panel Stats --- */
+        .panel-section {
+            padding: 15px;
+            border-bottom: 2px solid var(--border-light);
+        }
+
+        .panel-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: var(--dark-green);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        #efficiency-display {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .eff-value {
+            font-size: 4rem;
+            line-height: 1;
+            color: var(--dark-green);
+        }
+
+        .eff-bar-container {
+            height: 12px;
+            background: var(--seat-empty);
+            border-radius: 6px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .eff-bar {
+            height: 100%;
+            background: var(--dark-green);
+            width: 0%;
+            transition: width 0.5s ease, background-color 0.5s;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .stat-box-small {
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            padding: 10px 5px;
+            text-align: center;
+        }
+
+        .stat-box-small .val {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--dark-green);
+        }
+
+        .stat-box-small .lbl {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #666;
+            font-family: 'Barlow Condensed', sans-serif;
+        }
+
+        /* --- History Table --- */
+        #history-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .table-container {
+            flex: 1;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1rem;
+        }
+
+        th, td {
+            padding: 8px 5px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        th {
+            background: var(--bg-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(42, 32, 24, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--bg-color);
+            padding: 30px;
+            border-radius: 12px;
+            border: 4px solid var(--gold);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+            color: var(--dark-green);
+            font-size: 2.5rem;
+        }
+
+        .modal-subtitle {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.2rem;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            font-family: 'Barlow', sans-serif;
+            border: 2px solid var(--border-light);
+            border-radius: 6px;
+            background: white;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--gold);
+            outline: none;
+        }
+
+        .hint {
+            font-size: 0.85rem;
+            color: #555;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--dark-green);
+            color: var(--gold);
+            padding: 15px;
+            font-size: 1.5rem;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        /* --- Split Modal Specific --- */
+        #split-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .btn-split {
+            background: white;
+            border: 2px solid var(--gold);
+            color: var(--text-color);
+            padding: 10px;
+            font-size: 1.2rem;
+            border-radius: 6px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn-split:hover {
+            background: var(--gold);
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #ccc;
+            color: #333;
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 1.2rem;
+        }
+
+        /* --- Toasts --- */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 2000;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--dark-green);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            text-align: center;
+            border: 2px solid var(--gold);
+            animation: slideUp 0.3s ease forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hidden { display: none !important; }
+
+        /* Color classes for efficiency */
+        .color-green { color: #388e3c !important; }
+        .color-amber { color: #f57c00 !important; }
+        .color-red { color: #d32f2f !important; }
+        .bg-green { background-color: #388e3c !important; }
+        .bg-amber { background-color: #f57c00 !important; }
+        .bg-red { background-color: #d32f2f !important; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Startup Modal -->
+    <div id="startup-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">🦍 Skull Island</div>
+            <div class="modal-subtitle">Seating Operations Simulator</div>
+            
+            <div class="form-group">
+                <label>Your Name</label>
+                <input type="text" id="in-name" placeholder="E.g., Jane Doe" required>
+            </div>
+            <div class="form-group">
+                <label>Algorithm Name</label>
+                <input type="text" id="in-algo" placeholder="Short label for your strategy" required>
+            </div>
+            <div class="form-group">
+                <label>Algorithm Rule</label>
+                <input type="text" id="in-rule" placeholder="One sentence describing the rule" required>
+            </div>
+            <div class="form-group">
+                <label>Starting Distribution</label>
+                <select id="in-dist" onchange="updateHint()">
+                    <option value="OBS">Park Observed (Real World)</option>
+                    <option value="UNI">Uniform (Equal Chance)</option>
+                    <option value="BIN">Binomial B(6, 0.4)</option>
+                    <option value="BMD">Bimodal (Many 1s and 6s)</option>
+                </select>
+                <div id="dist-hint" class="hint">Weights based on real park observations. Peak at size 2.</div>
+            </div>
+            <button class="btn-primary" onclick="startGame()">BOARD THE EXPEDITION TRUCK</button>
+        </div>
+    </div>
+
+    <!-- Split Modal -->
+    <div id="split-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2 id="split-modal-title" class="modal-header" style="font-size: 2rem; color: var(--gold);">SPLIT PARTY</h2>
+            <p id="split-modal-desc" style="margin-bottom: 15px;">This party is too large for the remaining seats in this row. Select a valid split:</p>
+            <div id="split-options"></div>
+            <button class="btn-cancel" onclick="closeSplitModal()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <header>
+        <div class="header-title">🦍 Skull Island: Reign of Kong <span>Seating Operations Simulator</span></div>
+        <div class="header-stats">
+            <div class="stat-badge">Name: <strong id="hdr-name"></strong></div>
+            <div class="stat-badge">Algo: <strong id="hdr-algo"></strong></div>
+            <div class="stat-badge">Launches: <strong id="hdr-launches">0</strong></div>
+            <div class="stat-badge">Avg Eff: <strong id="hdr-avg-eff">0%</strong></div>
+            <div class="stat-badge">Empty: <strong id="hdr-empty">0</strong></div>
+            <select id="hdr-dist" onchange="changeDist(this.value)">
+                <option value="OBS">Park Observed</option>
+                <option value="UNI">Uniform</option>
+                <option value="BIN">Binomial</option>
+                <option value="BMD">Bimodal</option>
+            </select>
+        </div>
+    </header>
+
+    <main>
+        <!-- Left Panel -->
+        <div id="left-panel">
+            <div id="party-bar">
+                <div class="active-party-area">
+                    <span>Active Party:</span>
+                    <div id="active-party-drag" draggable="true" title="Drag to a row to seat">
+                        <div id="active-party-dots" class="dots-container"></div>
+                    </div>
+                    <button id="btn-manual-split" class="btn-small hidden" onclick="showManualSplitModal()" style="margin-left: 10px;">Split</button>
+                </div>
+                <div id="queue-area" class="queue-area">
+                    <span>Up Next:</span>
+                    <div id="queue-badges" class="dots-container"></div>
+                </div>
+            </div>
+
+            <div id="seating-area">
+                <div id="rows-container">
+                    <!-- Rows generated by JS -->
+                </div>
+                <div id="canvas-container" onclick="skipAnimation()">
+                    <canvas id="truck-canvas"></canvas>
+                </div>
+            </div>
+
+            <button id="btn-launch" onclick="launchTruck()">LAUNCH NOW</button>
+        </div>
+
+        <!-- Right Panel -->
+        <div id="right-panel">
+            <div class="panel-section">
+                <div class="panel-title">Current Truck Efficiency</div>
+                <div id="efficiency-display">
+                    <div id="eff-val" class="eff-value bebas">0%</div>
+                    <div class="eff-bar-container">
+                        <div id="eff-bar" class="eff-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-title">Session Stats</div>
+                <div class="stats-grid">
+                    <div class="stat-box-small">
+                        <div id="stat-launches" class="val bebas">0</div>
+                        <div class="lbl">Launches</div>
+                    </div>
+                    <div class="stat-box-small">
+                        <div id="stat-seated" class="val bebas">0</div>
+                        <div class="lbl">Seated</div>
+                    </div>
+                    <div class="stat-box-small">
+                        <div id="stat-empty" class="val bebas">0</div>
+                        <div class="lbl">Empty</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="history-section" class="panel-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                    <div class="panel-title" style="margin:0;">Launch History</div>
+                    <button class="btn-small" onclick="exportCSV()">Export CSV</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Dist</th>
+                                <th>Q</th>
+                                <th>Empty</th>
+                                <th>Eff%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            <!-- History rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+
+<script>
+    /* --- Constants & Configuration --- */
+    const PALETTE = [
+        '#D32F2F', '#1976D2', '#388E3C', '#FBC02D', 
+        '#7B1FA2', '#F57C00', '#0097A7', '#C2185B', 
+        '#689F38', '#E64A19', '#5D4037', '#64B5F6', 
+        '#455A64', '#0288D1', '#00796B', '#AFB42B'
+    ];
+    let colorIndex = 0;
+
+    const DIST_HINTS = {
+        OBS: "Weights based on real park observations. Peak at size 2.",
+        UNI: "Equal chance of drawing any party size from 1 to 6.",
+        BIN: "Binomial distribution B(6, 0.4). Peak at size 2 and 3.",
+        BMD: "Bimodal distribution. Mostly 1s and 6s, rarely 2-5."
+    };
+
+    /* --- Global State --- */
+    const state = {
+        studentName: "",
+        algoName: "",
+        algoRule: "",
+        distribution: "OBS",
+        
+        launches: 0,
+        totalSeated: 0,
+        totalEmpty: 0,
+        history: [],
+        
+        queue: [], // array of { size, originalSize, color, isPartial }
+        activeParty: null,
+        partiallySeated: false,
+        
+        rows: [ [], [], [], [] ], // 4 rows, up to 6 seats each
+        
+        // Animation State
+        animPhase: 'idle', // 'driveIn', 'idle', 'replay', 'driveOut'
+        animY: 0,
+        animFrame: 0,
+        animSnapshot: null,
+        animEff: 0,
+        
+        // Temp for split action
+        pendingSplitRow: null
+    };
+
+    /* --- Initialization --- */
+    function updateHint() {
+        document.getElementById('dist-hint').innerText = DIST_HINTS[document.getElementById('in-dist').value];
+    }
+
+    function startGame() {
+        const name = document.getElementById('in-name').value.trim();
+        const algo = document.getElementById('in-algo').value.trim();
+        const rule = document.getElementById('in-rule').value.trim();
+        const dist = document.getElementById('in-dist').value;
+
+        if(!name || !algo || !rule) {
+            alert("Please fill in all fields to board.");
+            return;
+        }
+
+        state.studentName = name;
+        state.algoName = algo;
+        state.algoRule = rule;
+        state.distribution = dist;
+
+        document.getElementById('hdr-name').innerText = name;
+        document.getElementById('hdr-algo').innerText = algo;
+        document.getElementById('hdr-dist').value = dist;
+
+        document.getElementById('startup-modal').classList.add('hidden');
+
+        initQueue();
+        initRowsDOM();
+        initDragAndDrop();
+        updateUI();
+        
+        // Setup Canvas
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Start initial drive in
+        startDriveIn();
+    }
+
+    function changeDist(val) {
+        state.distribution = val;
+        showToast(`Distribution changed to ${val}`);
+    }
+
+    /* --- Queue & Party Generation --- */
+    function getNextColor() {
+        const c = PALETTE[colorIndex];
+        colorIndex = (colorIndex + 1) % PALETTE.length;
+        return c;
+    }
+
+    function getRandomSize() {
+        const rand = Math.random();
+        let weights = [];
+        if (state.distribution === 'OBS') weights = [34, 229, 103, 78, 22, 9];
+        else if (state.distribution === 'UNI') weights = [1, 1, 1, 1, 1, 1];
+        else if (state.distribution === 'BIN') weights = [0.186624, 0.31104, 0.27648, 0.13824, 0.036864, 0.004096];
+        else if (state.distribution === 'BMD') weights = [40, 3, 3, 3, 3, 40];
+
+        let total = weights.reduce((a,b) => a+b, 0);
+        let cum = 0;
+        for (let i=0; i<6; i++) {
+            cum += weights[i] / total;
+            if (rand <= cum) return i + 1;
+        }
+        return 6;
+    }
+
+    function generateParty() {
+        const size = getRandomSize();
+        return { size, originalSize: size, color: getNextColor(), isPartial: false };
+    }
+
+    function initQueue() {
+        while(state.queue.length < 12) {
+            state.queue.push(generateParty());
+        }
+        shiftActiveParty();
+    }
+
+    function initDragAndDrop() {
+        const dragSource = document.getElementById('active-party-drag');
+        dragSource.addEventListener('dragstart', (e) => {
+            if(state.animPhase !== 'idle') {
+                e.preventDefault();
+                return;
+            }
+            e.dataTransfer.setData('text/plain', 'activeParty');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        const rowsContainer = document.getElementById('rows-container');
+        
+        rowsContainer.addEventListener('dragover', (e) => {
+            const row = e.target.closest('.staging-row');
+            if (!row || state.animPhase !== 'idle') return;
+            e.preventDefault(); // allow drop
+            row.classList.add('drag-over');
+        });
+
+        rowsContainer.addEventListener('dragleave', (e) => {
+            const row = e.target.closest('.staging-row');
+            if (!row) return;
+            row.classList.remove('drag-over');
+        });
+
+        rowsContainer.addEventListener('drop', (e) => {
+            const row = e.target.closest('.staging-row');
+            if (!row) return;
+            row.classList.remove('drag-over');
+            e.preventDefault();
+            
+            const data = e.dataTransfer.getData('text/plain');
+            if (data === 'activeParty') {
+                const rowIndex = parseInt(row.dataset.index, 10);
+                clickRow(rowIndex);
+            }
+        });
+    }
+
+    function shiftActiveParty() {
+        state.activeParty = state.queue.shift();
+        state.queue.push(generateParty());
+        state.partiallySeated = state.activeParty.isPartial ? true : false;
+    }
+
+    function pullFromQueue(index) {
+        if(state.partiallySeated) return showToast("Cannot pull while party is partially seated/split.");
+        if(state.animPhase !== 'idle') return showToast("Wait for truck loading.");
+        
+        const temp = state.queue[index];
+        state.queue[index] = state.activeParty;
+        state.activeParty = temp;
+        renderPartyBar();
+        showToast("Swapped active party with queue.");
+    }
+
+    /* --- Seating Logic --- */
+    function canPackParties(parties, caps) {
+        if (parties.length === 0) return true;
+        let p = parties[0];
+        let rest = parties.slice(1);
+        
+        if (p === 0) return canPackParties(rest, caps);
+
+        // A single rider can fit anywhere there is at least 1 seat
+        if (p === 1) {
+            for (let i = 0; i < caps.length; i++) {
+                if (caps[i] >= 1) {
+                    let next = [...caps];
+                    next[i] -= 1;
+                    if (canPackParties(rest, next)) return true;
+                }
+            }
+            return false;
+        }
+
+        // Try placing the group whole
+        for (let i = 0; i < caps.length; i++) {
+            if (caps[i] >= p) {
+                let next = [...caps];
+                next[i] -= p;
+                if (canPackParties(rest, next)) return true;
+            }
+        }
+        
+        // Try splitting the group (must leave pieces >= 2)
+        for (let v = 2; v <= p - 2; v++) {
+            for (let i = 0; i < caps.length; i++) {
+                if (caps[i] >= v) {
+                    let next = [...caps];
+                    next[i] -= v;
+                    if (canPackParties([p - v, ...rest], next)) return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    function clickRow(rowIndex) {
+        if(state.animPhase !== 'idle') return;
+        
+        const capacity = 6 - state.rows[rowIndex].length;
+        if(capacity === 0) return showToast("Row is full.");
+
+        const pSize = state.activeParty.size;
+        const currentCaps = state.rows.map(r => 6 - r.length);
+        
+        // Rule: Cross-truck splitting check (if it can't fit completely in the current truck, block it)
+        if(!canPackParties([pSize], currentCaps)) {
+            return showToast("Party cannot fit in remaining seats. Please Launch Now.");
+        }
+
+        if(pSize <= capacity) {
+            // Fits entirely
+            assignToRow(rowIndex, pSize);
+        } else {
+            // Needs split
+            state.pendingSplitRow = rowIndex;
+            showSplitModal(pSize, capacity, currentCaps, rowIndex);
+        }
+    }
+
+    function assignToRow(rowIndex, count) {
+        const row = state.rows[rowIndex];
+        const color = state.activeParty.color;
+        
+        for(let i=0; i<count; i++) {
+            row.push({ color });
+            animateSeatPop(rowIndex, row.length - 1);
+        }
+
+        state.activeParty.size -= count;
+        if(state.activeParty.size === 0) {
+            shiftActiveParty();
+        } else {
+            state.activeParty.isPartial = true;
+            state.partiallySeated = true;
+        }
+        updateUI();
+    }
+
+    function animateSeatPop(r, s) {
+        const rowDiv = document.getElementById('rows-container').children[r];
+        const seatDiv = rowDiv.querySelector('.seats-container').children[s];
+        seatDiv.classList.add('pop');
+        setTimeout(() => seatDiv.classList.remove('pop'), 200);
+    }
+
+    /* --- Modals & Toasts --- */
+    function showSplitModal(size, cap, currentCaps, rowIndex) {
+        let valid = [];
+        
+        for (let v = 2; v <= Math.min(size - 2, cap); v++) {
+            let nextCaps = [...currentCaps];
+            nextCaps[rowIndex] -= v;
+            let remainder = size - v;
+            
+            if (canPackParties([remainder], nextCaps)) {
+                valid.push(v);
+            }
+        }
+        
+        const container = document.getElementById('split-options');
+        container.innerHTML = '';
+        
+        document.getElementById('split-modal-title').innerText = "SPLIT PARTY";
+        document.getElementById('split-modal-desc').innerText = `This party is too large for the remaining seats in this row. Select a valid split:`;
+
+        if(valid.length === 0) {
+            container.innerHTML = `<p style="color:var(--text-color); font-weight:bold;">No valid split exists for this row.</p>`;
+        } else {
+            valid.forEach(v => {
+                const rem = size - v;
+                const btn = document.createElement('button');
+                btn.className = 'btn-split';
+                btn.innerHTML = `<span>Seat <strong>${v}</strong> here</span> <span>Keep <strong>${rem}</strong> together</span>`;
+                btn.onclick = () => {
+                    closeSplitModal();
+                    assignToRow(rowIndex, v);
+                };
+                container.appendChild(btn);
+            });
+        }
+        document.getElementById('split-modal').classList.remove('hidden');
+    }
+    
+    function showManualSplitModal() {
+        const size = state.activeParty.size;
+        const currentCaps = state.rows.map(r => 6 - r.length);
+        
+        if (!canPackParties([size], currentCaps)) {
+            return showToast("Party cannot fit entirely in remaining seats. Please Launch Now.");
+        }
+
+        let valid = [];
+        for (let v = 2; v <= size - 2; v++) {
+            let remainder = size - v;
+            
+            // Only offer manual split if both pieces can actually fit in the current truck
+            if (canPackParties([v, remainder], currentCaps)) {
+                valid.push(v);
+            }
+        }
+        
+        const container = document.getElementById('split-options');
+        container.innerHTML = '';
+
+        document.getElementById('split-modal-title').innerText = "MANUALLY SPLIT PARTY";
+        document.getElementById('split-modal-desc').innerText = `Select how to split this party of ${size} into multiple pieces:`;
+
+        if(valid.length === 0) {
+            container.innerHTML = `<p style="color:var(--text-color); font-weight:bold;">No valid split exists (must leave \u2265 2 together).</p>`;
+        } else {
+            valid.forEach(v => {
+                const rem = size - v;
+                const btn = document.createElement('button');
+                btn.className = 'btn-split';
+                btn.innerHTML = `<span>Split into <strong>${v}</strong> and <strong>${rem}</strong></span>`;
+                btn.onclick = () => {
+                    closeSplitModal();
+                    performManualSplit(v, rem);
+                };
+                container.appendChild(btn);
+            });
+        }
+        
+        document.getElementById('split-modal').classList.remove('hidden');
+    }
+
+    function performManualSplit(v, rem) {
+        const color = state.activeParty.color;
+        const orig = state.activeParty.originalSize;
+        
+        // Active party takes the 'v' portion
+        state.activeParty.size = v;
+        state.activeParty.isPartial = true;
+        state.partiallySeated = true; // Locks queue pulling
+        
+        // The remainder goes to the FRONT of the queue
+        state.queue.unshift({ size: rem, originalSize: orig, color: color, isPartial: true });
+        state.queue.pop(); // Pop one to maintain exact queue length
+        
+        updateUI();
+        showToast(`Party manually split into ${v} and ${rem}.`);
+    }
+
+    function closeSplitModal() {
+        state.pendingSplitRow = null;
+        document.getElementById('split-modal').classList.add('hidden');
+    }
+
+    function showToast(msg) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerText = msg;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2500);
+    }
+
+    /* --- Launch & Animation Control --- */
+    function launchTruck() {
+        if(state.animPhase !== 'idle') return;
+        
+        // Prepare Snapshot
+        state.animSnapshot = state.rows.map(r => [...r]);
+        
+        // Calculate Efficiency
+        const seated = state.rows.reduce((sum, r) => sum + r.length, 0);
+        state.animEff = Math.round((seated / 24) * 100);
+        
+        // Lock UI, Start Replay
+        state.animPhase = 'replay';
+        state.animFrame = 0;
+        document.getElementById('btn-launch').disabled = true;
+        
+        // Clear logic rows for NEXT truck, but UI holds snapshot until drive in
+        state.rows = [ [], [], [], [] ];
+        updateUI(true); // true = draw empty DOM rows
+        
+        // Restart the animation loop
+        requestAnimationFrame(animLoop);
+    }
+
+    function finalizeLaunch() {
+        state.launches++;
+        
+        const seatedThis = state.animSnapshot.reduce((sum, r) => sum + r.length, 0);
+        const emptyThis = 24 - seatedThis;
+        
+        state.totalSeated += seatedThis;
+        state.totalEmpty += emptyThis;
+        
+        // Add to history
+        state.history.unshift({
+            launch: state.launches,
+            dist: state.distribution,
+            queueShown: 'Y',
+            empty: emptyThis,
+            eff: state.animEff
+        });
+
+        // If partially seated, original rule implies we carry remainder to next truck.
+        // Queue handles this natively as activeParty is maintained.
+        
+        updateUI();
+        renderHistory();
+        
+        document.getElementById('btn-launch').disabled = false;
+        
+        startDriveIn();
+    }
+
+    function startDriveIn() {
+        state.animPhase = 'driveIn';
+        const canvas = document.getElementById('truck-canvas');
+        state.animY = canvas.height; 
+        requestAnimationFrame(animLoop);
+    }
+
+    function skipAnimation() {
+        if(state.animPhase === 'idle') return;
+        // Fast forward to end of sequence
+        if(state.animPhase === 'replay' || state.animPhase === 'driveOut') {
+            finalizeLaunch();
+        }
+        // Force drive in to finish instantly
+        const canvas = document.getElementById('truck-canvas');
+        const dims = truckDims(getTruckScale());
+        state.animY = parkedY(canvas, dims);
+        state.animPhase = 'idle';
+        drawTruck(state.animY, state.rows, 'live');
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if(e.code === 'Space') {
+            e.preventDefault();
+            skipAnimation();
+        }
+    });
+
+    /* --- DOM Updates --- */
+    function initRowsDOM() {
+        const container = document.getElementById('rows-container');
+        container.innerHTML = '';
+        for(let i=0; i<4; i++) {
+            let seatsHTML = '';
+            for(let s=0; s<6; s++) seatsHTML += `<div class="seat-rect"></div>`;
+            container.innerHTML += `
+                <div class="staging-row" data-index="${i}" onclick="clickRow(${i})">
+                    <div class="row-num">R${i+1}</div>
+                    <div class="seats-container">${seatsHTML}</div>
+                    <div class="row-count" id="rc-${i}">6 Free</div>
+                </div>
+            `;
+        }
+    }
+
+    function updateUI(forceEmptyRows = false) {
+        // Stats
+        document.getElementById('hdr-launches').innerText = state.launches;
+        const avg = state.launches === 0 ? 0 : Math.round((state.totalSeated / (state.launches * 24)) * 100);
+        document.getElementById('hdr-avg-eff').innerText = avg + '%';
+        document.getElementById('hdr-empty').innerText = state.totalEmpty;
+        
+        document.getElementById('stat-launches').innerText = state.launches;
+        document.getElementById('stat-seated').innerText = state.totalSeated;
+        document.getElementById('stat-empty').innerText = state.totalEmpty;
+        
+        const effDisplay = document.getElementById('eff-val');
+        const effBar = document.getElementById('eff-bar');
+        
+        let currentSeated = 0;
+        if(forceEmptyRows) currentSeated = 0;
+        else currentSeated = state.rows.reduce((sum, r) => sum + r.length, 0);
+        
+        const currentEff = Math.round((currentSeated / 24) * 100);
+        effDisplay.innerText = currentEff + '%';
+        effBar.style.width = currentEff + '%';
+        
+        // Colors for efficiency
+        effDisplay.className = 'eff-value bebas';
+        effBar.className = 'eff-bar';
+        if(currentEff >= 90) { effDisplay.classList.add('color-green'); effBar.classList.add('bg-green'); }
+        else if(currentEff >= 70) { effDisplay.classList.add('color-amber'); effBar.classList.add('bg-amber'); }
+        else { effDisplay.classList.add('color-red'); effBar.classList.add('bg-red'); }
+
+        // Rows DOM
+        for(let i=0; i<4; i++) {
+            const rowData = forceEmptyRows ? [] : state.rows[i];
+            const rowDiv = document.getElementById('rows-container').children[i];
+            const seats = rowDiv.querySelector('.seats-container').children;
+            for(let s=0; s<6; s++) {
+                if(s < rowData.length) {
+                    seats[s].style.backgroundColor = rowData[s].color;
+                    seats[s].style.borderColor = 'rgba(0,0,0,0.3)';
+                } else {
+                    seats[s].style.backgroundColor = 'var(--seat-empty)';
+                    seats[s].style.borderColor = 'rgba(0,0,0,0.1)';
+                }
+            }
+            document.getElementById(`rc-${i}`).innerText = `${6 - rowData.length} Free`;
+        }
+
+        renderPartyBar();
+        
+        if (state.animPhase === 'idle') {
+            const canvas = document.getElementById('truck-canvas');
+            const dims = truckDims(getTruckScale());
+            const pY = parkedY(canvas, dims);
+            drawTruck(pY, forceEmptyRows ? [[], [], [], []] : state.rows, 'live');
+        }
+    }
+
+    function renderPartyBar() {
+        const ad = document.getElementById('active-party-dots');
+        ad.innerHTML = '';
+        if(state.activeParty) {
+            for(let i=0; i<state.activeParty.size; i++) {
+                ad.innerHTML += `<div class="dot" style="background-color: ${state.activeParty.color}"></div>`;
+            }
+        }
+        
+        // Manual Split Button Visibility
+        const splitBtn = document.getElementById('btn-manual-split');
+        const currentCaps = state.rows.map(r => 6 - r.length);
+        
+        if(state.activeParty && state.activeParty.size >= 4 && state.animPhase === 'idle' && canPackParties([state.activeParty.size], currentCaps)) {
+            splitBtn.classList.remove('hidden');
+        } else {
+            splitBtn.classList.add('hidden');
+        }
+
+        // Queue area rendering
+        const qb = document.getElementById('queue-badges');
+        qb.innerHTML = '';
+        for(let i=0; i<5; i++) {
+            const q = state.queue[i];
+            qb.innerHTML += `<div class="queue-badge" style="background-color: ${q.color}" onclick="pullFromQueue(${i})">${q.size}</div>`;
+        }
+    }
+
+    function renderHistory() {
+        const tbody = document.getElementById('history-body');
+        tbody.innerHTML = '';
+        state.history.forEach(h => {
+            let colorClass = h.eff >= 90 ? 'color-green' : (h.eff >= 70 ? 'color-amber' : 'color-red');
+            tbody.innerHTML += `
+                <tr>
+                    <td>${h.launch}</td>
+                    <td>${h.dist}</td>
+                    <td>${h.queueShown}</td>
+                    <td>${h.empty}</td>
+                    <td class="${colorClass}"><strong>${h.eff}%</strong></td>
+                </tr>
+            `;
+        });
+    }
+
+    function exportCSV() {
+        if(state.history.length === 0) return showToast("No launches to export.");
+        let csv = 'Launch,Distribution,Queue_Shown,Seats_Empty,Efficiency_Pct,Student,Algorithm_Name,Algorithm_Rule\n';
+        state.history.forEach(h => {
+            csv += `"${h.launch}","${h.dist}","${h.queueShown}","${h.empty}","${h.eff}","${state.studentName}","${state.algoName}","${state.algoRule}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `kong_${state.studentName.replace(/\s+/g, '_')}.csv`;
+        a.click();
+    }
+
+    /* --- Canvas & Animation Engine --- */
+    const canvas = document.getElementById('truck-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+    }
+
+    function getTruckScale() {
+        // Base width 320, Base height 460
+        // We want height to fit nicely in canvas
+        const pad = 40;
+        return (canvas.height - pad) / 460;
+    }
+
+    function truckDims(scale) {
+        return { w: 320 * scale, h: 460 * scale };
+    }
+
+    function parkedY(canvas, dims) {
+        return canvas.height - dims.h - 10;
+    }
+
+    function drawTruck(y, seatsData, phase, eff, partialFrameCount = 24) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const scale = getTruckScale();
+        const dims = truckDims(scale);
+        const x = (canvas.width - dims.w) / 2;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        
+        // Draw base truck
+        ctx.fillStyle = '#4c5c44'; // Truck body color
+        ctx.fillRect(0, 70, 320, 280); // Passenger box
+        
+        // Windshield
+        ctx.fillStyle = '#1c2e36';
+        ctx.beginPath();
+        ctx.moveTo(20, 70);
+        ctx.lineTo(40, 10);
+        ctx.lineTo(280, 10);
+        ctx.lineTo(300, 70);
+        ctx.fill();
+        // Wiper
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(160, 65);
+        ctx.lineTo(80, 40);
+        ctx.stroke();
+
+        // Grille & Bumper
+        ctx.fillStyle = '#222';
+        ctx.fillRect(20, 350, 280, 50);
+        ctx.fillStyle = '#666';
+        ctx.fillRect(100, 350, 120, 40); // grille slots
+        
+        // Headlights
+        ctx.fillStyle = '#fff9d6';
+        ctx.beginPath(); ctx.arc(50, 375, 15, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(270, 375, 15, 0, Math.PI*2); ctx.fill();
+
+        // Wheels
+        ctx.fillStyle = '#111';
+        ctx.beginPath(); ctx.roundRect(-10, 380, 40, 70, 5); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(290, 380, 40, 70, 5); ctx.fill();
+
+        // Seats area background
+        ctx.fillStyle = '#333';
+        ctx.fillRect(10, 80, 300, 260);
+
+        // Draw seats
+        const rowY = [90, 150, 210, 270];
+        let seatCounter = 0;
+        
+        for(let r=0; r<4; r++) {
+            const rowData = seatsData ? seatsData[r] : [];
+            for(let s=0; s<6; s++) {
+                const sx = 15 + s * 48;
+                const sy = rowY[r];
+                
+                let sColor = '#d8cbaa'; // empty
+                let hasBorder = true;
+
+                if (phase === 'replay') {
+                    if (seatCounter < partialFrameCount) {
+                        if (s < rowData.length) sColor = rowData[s].color;
+                    }
+                } else {
+                    if (s < rowData.length) sColor = rowData[s].color;
+                }
+                
+                ctx.fillStyle = sColor;
+                ctx.beginPath();
+                ctx.roundRect(sx, sy, 40, 45, 4);
+                ctx.fill();
+                
+                if(hasBorder) {
+                    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                seatCounter++;
+            }
+        }
+
+        // Efficiency Overlay (during replay end)
+        if(phase === 'replay' && partialFrameCount >= 24) {
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(0, 70, 320, 280);
+            
+            ctx.fillStyle = eff >= 90 ? '#4caf50' : (eff >= 70 ? '#ff9800' : '#f44336');
+            ctx.font = 'bold 80px "Bebas Neue"';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${eff}%`, 160, 210);
+        }
+
+        ctx.restore();
+    }
+
+    function animLoop() {
+        if(state.animPhase === 'idle') return;
+
+        const dims = truckDims(getTruckScale());
+        const pY = parkedY(canvas, dims);
+
+        if (state.animPhase === 'driveIn') {
+            state.animY -= 15;
+            if(state.animY <= pY) {
+                state.animY = pY;
+                state.animPhase = 'idle';
+                drawTruck(state.animY, state.rows, 'live');
+                return;
+            }
+            drawTruck(state.animY, state.rows, 'live');
+        }
+        else if (state.animPhase === 'replay') {
+            state.animY = pY;
+            state.animFrame += 0.5; // 1 seat per 2 frames
+            
+            const seatsToDraw = Math.floor(state.animFrame);
+            drawTruck(state.animY, state.animSnapshot, 'replay', state.animEff, seatsToDraw);
+            
+            if (seatsToDraw >= 24 + 30) { // hold for 30 frames after full
+                state.animPhase = 'driveOut';
+            }
+        }
+        else if (state.animPhase === 'driveOut') {
+            state.animY -= 20;
+            drawTruck(state.animY, state.animSnapshot, 'replay', state.animEff, 24);
+            
+            if(state.animY < -dims.h) {
+                finalizeLaunch();
+                return;
+            }
+        }
+
+        requestAnimationFrame(animLoop);
+    }
+
+</script>
+</body>
+</html>
