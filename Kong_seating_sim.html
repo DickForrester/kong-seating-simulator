@@ -618,6 +618,42 @@
         .bg-amber { background-color: #f57c00 !important; }
         .bg-red { background-color: #d32f2f !important; }
 
+        /* --- Responsive: narrower monitors --- */
+        @media (max-width: 1100px) {
+            /* Shrink right panel */
+            #right-panel { width: 280px; }
+
+            /* Shrink header */
+            header { height: 50px; padding: 0.3rem 0.75rem; }
+            .header-title { font-size: 1.1rem; gap: 6px; }
+            .header-title span { font-size: 0.85rem; }
+            .header-stats { gap: 8px; font-size: 0.9rem; }
+            .stat-badge { padding: 3px 6px; }
+
+            /* Shrink party bar */
+            #party-bar { height: 58px; padding: 6px 12px; margin-bottom: 0.6rem; }
+            .active-party-area { font-size: 1rem; gap: 10px; }
+            .dot { width: 20px; height: 20px; }
+            .queue-badge { width: 26px; height: 26px; font-size: 0.95rem; }
+
+            /* Shrink seat rectangles — key to fitting the truck */
+            .seat-rect { width: 28px; height: 36px; }
+            .seats-container { gap: 5px; }
+            .staging-row { padding: 10px 12px; }
+            .row-num { font-size: 1.2rem; width: 32px; }
+            .row-count { width: 50px; font-size: 1rem; }
+
+            /* Shrink launch button */
+            #btn-launch { font-size: 1.5rem; padding: 10px; margin-top: 0.6rem; }
+
+            /* Shrink right panel internals */
+            .panel-section { padding: 10px 12px; }
+            .eff-value { font-size: 3rem; }
+            #efficiency-display { padding: 12px 0; }
+            .stat-box-small .val { font-size: 1.2rem; }
+            .stat-box-small { padding: 8px 4px; }
+        }
+
     </style>
 </head>
 <body>
@@ -1385,9 +1421,11 @@
 
     function getTruckScale() {
         // Base width 320, Base height 460
-        // We want height to fit nicely in canvas
+        // Fit to whichever dimension is the constraint
         const pad = 40;
-        return (canvas.height - pad) / 460;
+        const scaleH = (canvas.height - pad) / 460;
+        const scaleW = (canvas.width - pad) / 320;
+        return Math.min(scaleH, scaleW);
     }
 
     function truckDims(scale) {
@@ -1395,6 +1433,15 @@
     }
 
     function parkedY(canvas, dims) {
+        // If scale is height-constrained, pin to bottom as before.
+        // If scale is width-constrained (narrow monitor), center vertically
+        // so truck rows align with the seat rows on the left panel.
+        const pad = 40;
+        const scaleH = (canvas.height - pad) / 460;
+        const scaleW = (canvas.width - pad) / 320;
+        if (scaleW < scaleH) {
+            return (canvas.height - dims.h) / 2;
+        }
         return canvas.height - dims.h - 10;
     }
 
