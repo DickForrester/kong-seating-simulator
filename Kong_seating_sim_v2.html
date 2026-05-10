@@ -109,6 +109,64 @@
             animation: pulse 0.8s infinite;
         }
 
+        #game-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0 0 12px 0;
+            min-height: 38px;
+        }
+
+        .secondary-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-secondary {
+            background: #e0ded5;
+            color: #333;
+            border: 2px solid rgba(0,0,0,0.15);
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 1rem;
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #d2cec0;
+        }
+
+        .btn-danger {
+            background: #efe4dc;
+            color: #8a2f20;
+            border-color: rgba(138,47,32,0.35);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #e6d1c7;
+        }
+
+        #pause-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(42, 32, 24, 0.65);
+            color: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            font-family: 'Bebas Neue', cursive;
+            font-size: 5rem;
+            letter-spacing: 3px;
+            pointer-events: none;
+        }
+
+        .session-ended #countdown-display {
+            border-color: #8a2f20;
+            opacity: 0.85;
+        }
+
+
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.08); }
@@ -389,20 +447,47 @@
         }
 
         /* --- Launch Button --- */
+        #bottom-controls {
+            display: grid;
+            grid-template-columns: minmax(110px, 0.75fr) minmax(220px, 1.6fr) minmax(110px, 0.75fr);
+            gap: 14px;
+            align-items: stretch;
+            margin-top: 1rem;
+            flex-shrink: 0;
+        }
+
         #btn-launch {
             background-color: var(--gold);
             color: var(--dark-green);
-            font-size: 2rem;
-            padding: 15px;
+            font-size: 2.4rem;
+            padding: 18px 15px;
             border-radius: 8px;
-            margin-top: 1rem;
-            flex-shrink: 0;
             box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary-control {
+            background-color: #d6d0bf;
+            color: var(--text-color);
+            font-size: 1.35rem;
+            padding: 12px 10px;
+            border-radius: 8px;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+            align-self: center;
+            height: 70%;
+        }
+
+        .btn-secondary-control:hover {
+            background-color: #c4bda8;
         }
 
         #btn-launch:active:not(:disabled) {
             transform: translateY(4px);
             box-shadow: 0 0 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary-control:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.15);
         }
 
         /* --- Right Panel Stats --- */
@@ -695,8 +780,10 @@
             .row-num { font-size: 1.2rem; width: 32px; }
             .row-count { width: 50px; font-size: 1rem; }
 
-            /* Shrink launch button */
-            #btn-launch { font-size: 1.5rem; padding: 10px; margin-top: 0.6rem; }
+            /* Shrink bottom controls */
+            #bottom-controls { gap: 8px; margin-top: 0.6rem; }
+            #btn-launch { font-size: 1.7rem; padding: 12px 10px; }
+            .btn-secondary-control { font-size: 1rem; padding: 8px 6px; }
 
             /* Shrink right panel internals */
             .panel-section { padding: 10px 12px; }
@@ -758,6 +845,20 @@
         </div>
     </div>
 
+
+
+    <!-- End Session Modal -->
+    <div id="end-session-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2 class="modal-header" style="font-size: 2rem; color: var(--gold);">END SESSION?</h2>
+            <p style="margin-bottom: 15px;">This will stop the countdown and keep your launch history available for CSV export.</p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-cancel" onclick="closeEndSessionModal()">Cancel</button>
+                <button class="btn-primary" onclick="endSession()" style="margin-top:0; background:#8a2f20; color:white;">End Session</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Main App -->
     <header>
         <div class="header-title">🦍 Skull Island: Reign of Kong <span>Seating Operations Simulator</span></div>
@@ -768,7 +869,7 @@
             <div class="stat-badge">Avg Eff: <strong id="hdr-avg-eff">0%</strong></div>
             <div class="stat-badge">Empty: <strong id="hdr-empty">0</strong></div>
             <div class="stat-badge">Dist: <strong id="hdr-dist-label">Park Observed</strong></div>
-            <div class="stat-badge">Timer: <strong id="hdr-timer">15</strong>s</div>
+            <div class="stat-badge">Timer: <strong id="hdr-timer">30</strong>s</div>
         </div>
     </header>
 
@@ -791,10 +892,15 @@
 
             <div id="countdown-display">
                 <div id="countdown-label">TIME REMAINING</div>
-                <div id="countdown-timer">15</div>
+                <div id="countdown-timer">30</div>
+            </div>
+
+            <div id="game-controls">
+                <div style="font-family:'Barlow Condensed',sans-serif; font-weight:bold; color:#555;">Launch remains the large primary action below.</div>
             </div>
 
             <div id="seating-area">
+                <div id="pause-overlay" class="hidden">PAUSED</div>
                 <div id="rows-container">
                     <!-- Rows generated by JS -->
                 </div>
@@ -803,8 +909,14 @@
                 </div>
             </div>
 
-            <button id="btn-launch" onclick="launchTruck()">LAUNCH NOW</button>
-        </div>
+            
+            
+            <div id="bottom-controls">
+                <button id="btn-pause" class="btn-secondary-control" onclick="togglePause()">PAUSE</button>
+                <button id="btn-launch" onclick="launchTruck()">LAUNCH NOW</button>
+                <button id="btn-end-session" class="btn-secondary-control" onclick="confirmEndSession()">END SESSION</button>
+            </div>
+</div>
 
         <!-- Right Panel -->
         <div id="right-panel">
@@ -885,9 +997,11 @@
         studentName: "",
         algoName: "",
         distribution: "OBS",
-        timeLimit: 15,
-        timeRemaining: 15,
+        timeLimit: 30,
+        timeRemaining: 30,
         timerInterval: null,
+        paused: false,
+        sessionEnded: false,
         
         launches: 0,
         totalSeated: 0,
@@ -921,7 +1035,7 @@
         const algo = document.getElementById('in-algo').value.trim();
         const dist = document.getElementById('in-dist').value;
         const timeLimitInput = document.querySelector('input[name="timeLimit"]:checked');
-        const timeLimit = timeLimitInput ? parseInt(timeLimitInput.value, 10) : 15;
+        const timeLimit = timeLimitInput ? parseInt(timeLimitInput.value, 10) : 30;
 
         if(!name || !algo) {
             alert("Please enter your name and algorithm description to begin.");
@@ -958,12 +1072,14 @@
 
 
     /* --- Timer Logic --- */
-    function startDispatchTimer() {
+    function startDispatchTimer(reset = true) {
+        if(state.sessionEnded) return;
         clearInterval(state.timerInterval);
-        state.timeRemaining = state.timeLimit;
+        if(reset) state.timeRemaining = state.timeLimit;
         updateTimerUI();
 
         state.timerInterval = setInterval(() => {
+            if(state.paused || state.sessionEnded) return;
             state.timeRemaining--;
             updateTimerUI();
 
@@ -974,7 +1090,7 @@
                 timerEl.innerText = 'DISPATCH!';
                 showToast('Time expired — truck dispatched.');
                 setTimeout(() => {
-                    if(state.animPhase === 'idle') launchTruck();
+                    if(state.animPhase === 'idle' && !state.sessionEnded) launchTruck();
                 }, 350);
             }
         }, 1000);
@@ -984,15 +1100,33 @@
         const timerEl = document.getElementById('countdown-timer');
         const hdrTimer = document.getElementById('hdr-timer');
         const launchBtn = document.getElementById('btn-launch');
+        const pauseBtn = document.getElementById('btn-pause');
         if(!timerEl || !hdrTimer || !launchBtn) return;
 
-        timerEl.innerText = state.timeRemaining;
+        if(state.sessionEnded) {
+            timerEl.innerText = 'ENDED';
+            hdrTimer.innerText = '0';
+            launchBtn.innerText = 'SESSION ENDED';
+            launchBtn.disabled = true;
+            if(pauseBtn) pauseBtn.disabled = true;
+            return;
+        }
+
+        timerEl.innerText = state.paused ? 'PAUSED' : state.timeRemaining;
         hdrTimer.innerText = state.timeRemaining;
 
         timerEl.classList.remove('timer-pulse');
         launchBtn.classList.remove('timer-pulse');
         launchBtn.innerText = 'LAUNCH NOW';
+        launchBtn.disabled = state.paused;
         timerEl.style.color = '#388e3c';
+
+        if(pauseBtn) pauseBtn.innerText = state.paused ? 'RESUME' : 'PAUSE';
+
+        if(state.paused) {
+            timerEl.style.color = '#666';
+            return;
+        }
 
         if(state.timeRemaining <= Math.ceil(state.timeLimit / 2)) {
             timerEl.style.color = '#f57c00';
@@ -1008,6 +1142,43 @@
     function stopDispatchTimer() {
         clearInterval(state.timerInterval);
         state.timerInterval = null;
+    }
+
+    function togglePause() {
+        if(state.sessionEnded) return;
+        if(state.animPhase !== 'idle') return showToast('Pause is available once the truck is ready.');
+        state.paused = !state.paused;
+        document.getElementById('pause-overlay').classList.toggle('hidden', !state.paused);
+        updateTimerUI();
+        if(state.paused) {
+            stopDispatchTimer();
+            showToast('Simulation paused.');
+        } else {
+            showToast('Simulation resumed.');
+            startDispatchTimer(false);
+        }
+    }
+
+    function confirmEndSession() {
+        if(state.sessionEnded) return;
+        document.getElementById('end-session-modal').classList.remove('hidden');
+    }
+
+    function closeEndSessionModal() {
+        document.getElementById('end-session-modal').classList.add('hidden');
+    }
+
+    function endSession() {
+        closeEndSessionModal();
+        state.sessionEnded = true;
+        state.paused = false;
+        stopDispatchTimer();
+        document.body.classList.add('session-ended');
+        document.getElementById('pause-overlay').classList.add('hidden');
+        document.getElementById('btn-launch').disabled = true;
+        document.getElementById('btn-pause').disabled = true;
+        updateTimerUI();
+        showToast('Session ended. You can still export your CSV.');
     }
 
     /* --- Queue & Party Generation --- */
@@ -1049,7 +1220,7 @@
     function initDragAndDrop() {
         const dragSource = document.getElementById('active-party-drag');
         dragSource.addEventListener('dragstart', (e) => {
-            if(state.animPhase !== 'idle') {
+            if(state.animPhase !== 'idle' || state.paused || state.sessionEnded) {
                 e.preventDefault();
                 return;
             }
@@ -1093,6 +1264,8 @@
     }
 
     function pullFromQueue(index) {
+        if(state.sessionEnded) return showToast("Session has ended. Export your results when ready.");
+        if(state.paused) return showToast("Resume the simulation before changing the queue.");
         if(state.partiallySeated) return showToast("Cannot pull while party is partially seated/split.");
         if(state.animPhase !== 'idle') return showToast("Wait for truck loading.");
         
@@ -1147,6 +1320,8 @@
     }
 
     function clickRow(rowIndex) {
+        if(state.sessionEnded) return showToast("Session has ended. Export your results when ready.");
+        if(state.paused) return showToast("Resume the simulation before seating guests.");
         if(state.animPhase !== 'idle') return;
         
         const capacity = 6 - state.rows[rowIndex].length;
@@ -1235,6 +1410,8 @@
     }
     
     function showManualSplitModal() {
+        if(state.sessionEnded) return showToast("Session has ended. Export your results when ready.");
+        if(state.paused) return showToast("Resume the simulation before splitting parties.");
         const size = state.activeParty.size;
         const currentCaps = state.rows.map(r => 6 - r.length);
         
@@ -1313,6 +1490,8 @@
 
     /* --- Launch & Animation Control --- */
     function launchTruck() {
+        if(state.sessionEnded) return showToast("Session has ended. Export your results when ready.");
+        if(state.paused) return showToast("Resume the simulation before launching.");
         if(state.animPhase !== 'idle') return;
         stopDispatchTimer();
         
@@ -1360,9 +1539,10 @@
         updateUI();
         renderHistory();
         
-        document.getElementById('btn-launch').disabled = false;
+        document.getElementById('btn-launch').disabled = state.sessionEnded;
         
-        startDriveIn();
+        if(!state.sessionEnded) startDriveIn();
+        else updateTimerUI();
     }
 
     function startDriveIn() {
@@ -1373,6 +1553,7 @@
     }
 
     function skipAnimation() {
+        if(state.paused || state.sessionEnded) return;
         if(state.animPhase === 'idle') return;
         // Fast forward to end of sequence
         if(state.animPhase === 'replay' || state.animPhase === 'driveOut') {
@@ -1385,7 +1566,7 @@
         state.animY = parkedY(canvas, dims);
         state.animPhase = 'idle';
         drawTruck(state.animY, state.rows, 'live');
-        startDispatchTimer();
+        if(!state.sessionEnded && !state.paused) startDispatchTimer();
     }
 
     window.addEventListener('keydown', (e) => {
@@ -1676,7 +1857,7 @@
                 state.animY = pY;
                 state.animPhase = 'idle';
                 drawTruck(state.animY, state.rows, 'live');
-                startDispatchTimer();
+                if(!state.sessionEnded && !state.paused) startDispatchTimer();
                 return;
             }
             drawTruck(state.animY, state.rows, 'live');
