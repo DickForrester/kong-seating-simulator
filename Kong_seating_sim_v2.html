@@ -1576,6 +1576,18 @@
         }
     });
 
+    document.addEventListener('click', (e) => {
+        if(!state.paused) return;
+
+        // Do not resume from modal clicks or the control buttons themselves.
+        if(e.target.closest('.modal-overlay')) return;
+        if(e.target.closest('#btn-pause')) return;
+        if(e.target.closest('#btn-end-session')) return;
+
+        togglePause();
+    });
+
+
     /* --- DOM Updates --- */
     function initRowsDOM() {
         const container = document.getElementById('rows-container');
